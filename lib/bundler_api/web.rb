@@ -9,6 +9,7 @@ require 'bundler_api/dep_calc'
 require 'bundler_api/metriks'
 require 'bundler_api/runtime_instrumentation'
 require 'bundler_api/gem_helper'
+require 'bundler_api/index'
 require 'bundler_api/update/job'
 require 'bundler_api/update/yank_job'
 
@@ -94,6 +95,11 @@ class BundlerApi::Web < Sinatra::Base
 
     deps = with_metriks { get_cached_dependencies }
     ActiveSupport::Notifications.instrument('marshal.deps') { Marshal.dump(deps) }
+  end
+
+  get "/names" do
+    content_type 'application/text;charset=UTF-8'
+    BundlerApi::Index.new(@conn).names
   end
 
   get "/api/v1/dependencies.json" do

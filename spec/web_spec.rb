@@ -85,6 +85,16 @@ describe BundlerApi::Web do
     end
   end
 
+  context "GET /names" do
+    let(:request) { "/names" }
+
+    it "return a list of gem names, one per line" do
+      get request
+
+      expect(last_response).to be_ok
+      expect(last_response.body).to eq("rack")
+    end
+  end
 
   context "GET /api/v1/dependencies.json" do
     let(:request) { "/api/v1/dependencies.json" }
