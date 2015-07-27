@@ -216,6 +216,16 @@ end
 desc "Generate/update the versions.list file"
 task :versions do |t, args|
   database_connection do |db|
-    BundlerApi::VersionsFile.new(db).create_or_update
+    file_path = BundlerApi::GemInfo::VERSIONS_FILE_PATH
+    versions_file = CompactIndex::VersionsFile.new(file_path)
+    gem_info = BundlerApi::GemInfo.new(db)
+    if File.exists? file_path
+      last_update = versions_file.updated_at
+      new_versions = gem_info.versions_from(last_update)
+      versions_file.update(new_versions)
+    else
+      new_versions = gem_info.versions_from(Time.new('1984'))
+      versions_file.create(new_versions)
+    end
   end
 end
