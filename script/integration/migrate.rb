@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-lib = File.expand_path(File.join('..', '..', 'lib'), __FILE__)
+lib = File.expand_path(File.join('..', '..', '..', 'lib'), __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 require 'bundler/setup'
@@ -39,7 +39,7 @@ def import(database_url, sql_file)
   puts `psql -d #{database_name(database_url)} < #{sql_file}`
 end
 
-def migrate_checksums(temp_database_url, database_url)
+def migrate_versions_data_when_checksum_is_nil(temp_database_url, database_url)
   temp_db = Sequel.connect temp_database_url
   db = Sequel.connect database_url
 
@@ -58,7 +58,12 @@ def migrate_checksums(temp_database_url, database_url)
     if checksum_entry
       checksum = checksum_entry[:sha256]
       created_at = checksum_entry[:versions_created_at]
-      db[:versions].where(id: entry[:id]).update(checksum: checksum, created_at: created_at)
+      ruby_version = checksum_entry[:ruby_version]
+      db[:versions].where(id: entry[:id]).update(
+        checksum: checksum,
+        created_at: created_at,
+        required_ruby_version: ruby_version
+      )
     end
   end
 end
@@ -95,7 +100,7 @@ drop_database(temp_database_url)
 create_database(temp_database_url)
 begin
   import(temp_database_url,sql_file)
-  migrate_checksums(temp_database_url, database_url)
+  migrate_versions_data_when_checksum_is_nil(temp_database_url, database_url)
   migrate_info_checksums(database_url)
 ensure
   drop_database(temp_database_url)
