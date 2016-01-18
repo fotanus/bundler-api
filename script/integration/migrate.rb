@@ -42,6 +42,7 @@ end
 def migrate_versions_data_when_checksum_is_nil(temp_database_url, database_url)
   temp_db = Sequel.connect temp_database_url
   db = Sequel.connect database_url
+  rubygem_versions = eval File.open("#{File.dirname(__FILE__)}/rubygem_versions.txt").read
 
   puts "migrating checksum"
 
@@ -59,10 +60,13 @@ def migrate_versions_data_when_checksum_is_nil(temp_database_url, database_url)
       checksum = checksum_entry[:sha256]
       created_at = checksum_entry[:versions_created_at]
       ruby_version = checksum_entry[:ruby_version]
+      rubygems_version = rubygem_versions["#{entry[:name]}-#{entry[:number]}"]
+
       db[:versions].where(id: entry[:id]).update(
         checksum: checksum,
         created_at: created_at,
-        required_ruby_version: ruby_version
+        required_ruby_version: ruby_version,
+        rubygems_version: rubygems_version
       )
     end
   end
@@ -95,6 +99,7 @@ end
 sql_file = ARGV.first
 temp_database_url = get_temp_database_url
 database_url = ENV['DATABASE_URL']
+puts "Using #{database_url}"
 
 drop_database(temp_database_url)
 create_database(temp_database_url)
